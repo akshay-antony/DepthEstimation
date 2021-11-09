@@ -61,6 +61,7 @@ class ToTensor(object):
 		img = img.view(image.size[1], image.size[0], nchannel)
 
 		img = img.transpose(0, 1).transpose(0, 2).contiguous()
+		
 		if isinstance(img, torch.ByteTensor):
 		    return img.float().div(255)
 		else:

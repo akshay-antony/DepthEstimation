@@ -69,7 +69,7 @@ class Decoder(nn.Module):
 		self.uplayer4 = nn.Sequential(
 			                nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
 			                nn.ReLU(),
-			                nn.Conv2d(64, 1, kernel_size=3, stride=1, padding=1)
+			                nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1)
 			                )
 
 	def forward(self, features):
@@ -97,5 +97,6 @@ class Network(nn.Module):
 if __name__ == '__main__':
 	a = torch.randn((1,3,224,224))
 	model = Network()
-	b = model(a)
-	print(b.shape)
+	
+	l = sum(p.numel() for p in model.parameters() if p.requires_grad)
+	print(l/1000000)
