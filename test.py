@@ -1,5 +1,5 @@
 import torch
-from dataloader import MyDataset
+from dataloader import MyDataset, dataset_sh
 from transforms import RandomHorizontalFlip, Resize, ToTensor
 from torchvision import transforms
 from torch.utils.data import DataLoader
@@ -10,6 +10,7 @@ from PIL import Image
 from matplotlib import cm
 import numpy as np
 import time
+from mobile_net import Mobile_Net_Unet
 
 
 def norma(image):
@@ -34,9 +35,10 @@ if __name__ == '__main__':
 	# input_image = input_image.type(torch.float32) 
 	# input_image /= 255
 
-	model = Network()
+	model = Mobile_Net_Unet()
 
-	model.load_state_dict(torch.load("/home/akshay/DepthEstimation/model_weights.pth"))
+	checkpoint = torch.load("/home/akshay/DepthEstimation/checkpoint_24_mbnet.pth")
+	model.load_state_dict(checkpoint['state_dict'])
 	model.eval()
 
 
@@ -47,7 +49,7 @@ if __name__ == '__main__':
 
 
 
-	dataset = MyDataset(custom_transform)
+	dataset = dataset_sh(custom_transform)
 	data = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=8)
 	
 	
@@ -55,21 +57,25 @@ if __name__ == '__main__':
 		image_input, target_image = batch_data['input_image'], batch_data['output_image']
 		predicted_image = model(image_input)
 		#predicted_image = np.clip(norma(predicted_image.detach()), 10, 1000) / 100
-
 		target_image = target_image.detach().numpy()
-		tr = np.transpose(target_image[0], (1,2,0))
-		tr /= np.max(tr)
-
-
 		predicted_image = predicted_image.detach().numpy()
-		pr = np.transpose(predicted_image[0], (1,2,0))
-		print(np.max(pr))
-		pr = 1000/pr
-		pr /= np.max(pr)
+		for i in range(16):
+			
+			tr = np.transpose(target_image[i], (1,2,0))
 
-		target_image_PIL = Image.fromarray(np.uint8(tr*255)).convert('RGB')
-		PIL_image = Image.fromarray(np.uint8(pr*255)).convert('RGB')
-		PIL_image.show()
-		target_image_PIL.show()
+			print(np.max(tr), np.min(tr))
+			tr /= np.max(tr)
+
+
+			
+			pr = np.transpose(predicted_image[i], (1,2,0))
+			print(np.min(pr), np.max(pr))
+			pr = 1000/pr
+			pr /= np.max(pr)
+
+			target_image_PIL = Image.fromarray(np.uint8(tr*255)).convert('RGB')
+			PIL_image = Image.fromarray(np.uint8(pr*255)).convert('RGB')
+			PIL_image.show()
+			target_image_PIL.show()
 		break
 

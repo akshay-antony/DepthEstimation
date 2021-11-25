@@ -22,12 +22,17 @@ if __name__ == '__main__':
 						       [RandomHorizontalFlip(),
 					            Resize(),
 					            ToTensor()])
+
+	checkpoint = torch.load("/home/akshay/DepthEstimation/checkpoint.pth")
+	model.load_state_dict(checkpoint['state_dict'])
+	epoch = checkpoint['epoch']
 	dataset = MyDataset(custom_transform)
 	loss_func = nn.L1Loss()
 	optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 	model.train()
+	optimizer.load_state_dict(checkpoint['optimizer'])
 
-	for i in range(1000):
+	for i in range(10):
 		data = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=8)
 		losses = 0 
 		data_no = 0
@@ -60,6 +65,4 @@ if __name__ == '__main__':
    	 	'optimizer': optimizer.state_dict()
 		}
 
-	torch.save(checkpoint, "/home/akshay/DepthEstimation/checkpoint.pth")
-	torch.save(model.state_dict(), "/home/akshay/DepthEstimation/model_weights.pth")
-	torch.save(optimizer.state_dict(), "/home/akshay/DepthEstimation/opt_weights.pth")
+	torch.save(checkpoint, "/home/akshay/DepthEstimation/checkpoint_24.pth")

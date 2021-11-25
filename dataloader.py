@@ -27,5 +27,27 @@ class MyDataset(Dataset):
 	def __len__(self):
 		return len(self.input_image_files)	
 
+class dataset_sh(Dataset):
+	def __init__(self, transform=None):
+		super(dataset_sh, self).__init__()
+		self.input_image_files = sorted(os.listdir("/home/akshay/DepthEstimation/test_dataset_generated/data/rgb/"))
+		self.output_image_files = sorted(os.listdir("/home/akshay/DepthEstimation/test_dataset_generated/data/depth/"))
+		self.transform = transform
+
+	def __getitem__(self, idx):
+		image_input = Image.open(os.path.join("/home/akshay/DepthEstimation/test_dataset_generated/data/rgb/", self.input_image_files[idx]))
+		
+		image_output = Image.open(os.path.join("/home/akshay/DepthEstimation/test_dataset_generated/data/depth/", self.output_image_files[idx]))
+		training_data = {'input_image': image_input, 'output_image': image_output}
+
+
+		if self.transform:
+			training_data = self.transform(training_data)
+
+		return training_data
+
+	def __len__(self):
+		return len(self.input_image_files)	
+
 if __name__ == "__main__":
 	pass
