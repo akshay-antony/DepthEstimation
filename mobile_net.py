@@ -64,4 +64,7 @@ class Mobile_Net_Unet(nn.Module):
 		return output
 
 if __name__ == '__main__':
-	pass
+	x = torch.randn((1,3,192,224))
+	model = Mobile_Net_Unet()
+	pytorch_total_params = sum(p.numel() for p in model.parameters())
+	print(pytorch_total_params/1000000)

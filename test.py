@@ -1,6 +1,6 @@
 import torch
 from dataloader import MyDataset, dataset_sh
-from transforms import RandomHorizontalFlip, Resize, ToTensor
+from transforms import RandomHorizontalFlip, Resize, ToTensor, ToTensor_custom
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from model import Network
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 	model = Mobile_Net_Unet()
 
-	checkpoint = torch.load("/home/akshay/DepthEstimation/checkpoint_24_mbnet.pth")
+	checkpoint = torch.load("/home/akshay/DepthEstimation/checkpoint_24_mbnet_sh.pth")
 	model.load_state_dict(checkpoint['state_dict'])
 	model.eval()
 
@@ -45,12 +45,12 @@ if __name__ == '__main__':
 	custom_transform = transforms.Compose(
 						       [RandomHorizontalFlip(),
 					            Resize(),
-					            ToTensor()])
+					            ToTensor_custom()])
 
 
 
 	dataset = dataset_sh(custom_transform)
-	data = DataLoader(dataset, batch_size=1, shuffle=True, num_workers=8)
+	data = DataLoader(dataset, batch_size=10, shuffle=True, num_workers=8)
 	
 	
 	for b_no, batch_data in enumerate(data):
@@ -59,22 +59,19 @@ if __name__ == '__main__':
 		#predicted_image = np.clip(norma(predicted_image.detach()), 10, 1000) / 100
 		target_image = target_image.detach().numpy()
 		predicted_image = predicted_image.detach().numpy()
-		for i in range(16):
+		for i in range(10):
 			
 			tr = np.transpose(target_image[i], (1,2,0))
-
-			print(np.max(tr), np.min(tr))
 			tr /= np.max(tr)
-
-
 			
 			pr = np.transpose(predicted_image[i], (1,2,0))
-			print(np.min(pr), np.max(pr))
-			pr = 1000/pr
+			pr = 35/pr
 			pr /= np.max(pr)
 
 			target_image_PIL = Image.fromarray(np.uint8(tr*255)).convert('RGB')
 			PIL_image = Image.fromarray(np.uint8(pr*255)).convert('RGB')
+			PIL_image.save(str(i)+".png")
+			target_image_PIL.save(str(i) + "target.png")
 			PIL_image.show()
 			target_image_PIL.show()
 		break

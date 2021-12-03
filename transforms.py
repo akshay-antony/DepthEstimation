@@ -9,6 +9,9 @@ from PIL import Image
 def _is_pil_image(img):
     return isinstance(img, Image.Image)
 
+def _is_numpy_image(img):
+	return isinstance(img, (np.ndarray, np.generic))
+
 class RandomHorizontalFlip(object):
 	def __call__(self, sample_data):
 		input_image, output_image = sample_data['input_image'], sample_data['output_image']
@@ -68,3 +71,101 @@ class ToTensor(object):
 		    return img
 
 
+class ToTensor_custom(object):
+	def __call__(self, sample_data):
+		input_image, output_image = sample_data['input_image'], sample_data['output_image']
+		input_image  = self.to_tensor(input_image)
+		output_image = self.to_tensor(output_image).float() * 35
+		output_image = torch.clamp(output_image, min=1, max=35)
+
+		return {'input_image': input_image, 'output_image': output_image}
+
+	def to_tensor(self, image):
+		if not(_is_pil_image(image) or _is_numpy_image(image)):
+			raise TypeError('image should be PIL Image or ndarray. Got {}'.format(type(image)))
+
+		if isinstance(image, np.ndarray):
+			img = torch.from_numpy(image.transpose((2, 0, 1)))
+
+		if image.mode == 'I':
+			img = torch.from_numpy(np.array(image, np.int32, copy=False))
+		elif image.mode == 'I;16':
+			img = torch.from_numpy(np.array(image, np.int16, copy=False))
+		else:
+			img = torch.ByteTensor(torch.ByteStorage.from_buffer(image.tobytes()))
+        # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+        
+		if image.mode == 'YCbCr':
+			nchannel = 3
+		elif image.mode == 'I;16':
+			nchannel = 1
+		else:
+			nchannel = len(image.mode)
+        
+		img = img.view(image.size[1], image.size[0], nchannel)
+
+		img = img.transpose(0, 1).transpose(0, 2).contiguous()
+		
+		if isinstance(img, torch.ByteTensor):
+		    return img.float().div(255)
+		else:
+		    return img
+
+
+class ToTensor_KITTI(object):
+	def __call__(self, sample_data):
+		input_image, output_image = sample_data['input_image'], sample_data['output_image']
+
+		input_image  = self.to_tensor(input_image)
+		output_image = self.to_tensor(output_image)
+		output_image *= 256.
+		output_image = torch.clamp(output_image, min=1, max=256)
+		return {'input_image': input_image, 'output_image': output_image}
+
+	def to_tensor(self, image):
+		if not(_is_pil_image(image) or _is_numpy_image(image)):
+			raise TypeError('image should be PIL Image or ndarray. Got {}'.format(type(image)))
+
+		if isinstance(image, np.ndarray):
+			img = torch.from_numpy(image.transpose((2, 0, 1)))
+
+		if image.mode == 'I':
+			img = torch.from_numpy(np.array(image, np.int32, copy=False))
+		elif image.mode == 'I;16':
+			img = torch.from_numpy(np.array(image, np.int16, copy=False))
+		else:
+			img = torch.ByteTensor(torch.ByteStorage.from_buffer(image.tobytes()))
+        # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+        
+		if image.mode == 'YCbCr':
+			nchannel = 3
+		elif image.mode == 'I;16':
+			nchannel = 1
+		elif image.mode == 'RGBA':
+			nchannel = 3
+		else:
+			nchannel = len(image.mode)
+        
+		img = img.view(image.size[1], image.size[0], nchannel)
+
+		img = img.transpose(0, 1).transpose(0, 2).contiguous()
+		
+		if isinstance(img, torch.ByteTensor):
+		    return img.float().div(255)
+		else:
+		    return img
+
+
+class Resize_KITTI(object):
+	def __call__(self, sample_data):
+		input_image, output_image = sample_data['input_image'], sample_data['output_image']
+
+		left = int(input_image.size[0]/2-224/2)
+		upper = int(input_image.size[1]/2-192/2)
+		right = left + 224
+		lower = upper + 192
+
+		input_image = input_image.crop((left, upper,right,lower))
+		output_image = output_image.crop((left, upper, right, lower))
+
+		return {'input_image': input_image, 'output_image': output_image}
