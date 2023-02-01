@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn 
 import torchvision
+from typing import List
 
 
 class UpSample(nn.Module):
@@ -33,22 +34,22 @@ class Decoder(nn.Module):
 		self.decoder_4 = UpSample(48, 16, 16, extra_layer=False)
 		self.decoder_5 = UpSample(32, 3, 3, extra_layer=False)
 
-	def forward(self, features):
+	def forward(self, features: List[torch.Tensor]):
 		x1 = self.decoder_1(features[-1]) #14*14
-		x2 = self.decoder_2(torch.cat((x1, features[14]), axis=1)) #28*28
-		x3 = self.decoder_3(torch.cat((x2, features[7]), axis=1)) #56*56
-		x4 = self.decoder_4(torch.cat((x3, features[4]), axis=1)) #112*112
-		x5 = self.decoder_5(torch.cat((x4, features[2]), axis=1)) #224*224
+		x2 = self.decoder_2(torch.cat((x1, features[14]), dim=1)) #28*28
+		x3 = self.decoder_3(torch.cat((x2, features[7]), dim=1)) #56*56
+		x4 = self.decoder_4(torch.cat((x3, features[4]), dim=1)) #112*112
+		x5 = self.decoder_5(torch.cat((x4, features[2]), dim=1)) #224*224
 		return x5 
 
 class Encoder(nn.Module):
 	def __init__(self):
 		super(Encoder, self).__init__()
-		self.layer = torchvision.models.mobilenet_v2(pretrained=True)
+		self.layer = torchvision.models.mobilenet_v2(weights='MobileNet_V2_Weights.DEFAULT')
 
 	def forward(self, x):
 		features = [x]
-		for k, v in self.layer.features._modules.items():
+		for k, v in self.layer.features.named_children():
 			features.append(v(features[-1]))
 		return features
 
@@ -66,5 +67,7 @@ class Mobile_Net_Unet(nn.Module):
 if __name__ == '__main__':
 	x = torch.randn((1,3,192,224))
 	model = Mobile_Net_Unet()
+	out = model(x)
+	print(out.shape)
 	pytorch_total_params = sum(p.numel() for p in model.parameters())
 	print(pytorch_total_params/1000000)
